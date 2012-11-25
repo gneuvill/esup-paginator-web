@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui">
+    <h:head>
+    </h:head>
+    <h:body>
+        <h1>Esup Paginator</h1>
+        <h:form>
+            <p:blockUI block="userPanel" trigger="genUsers" />
+            <p:panel id="userPanel" style="border: none;">
+                <p:commandButton id="genUsers" value="Générer des 'User'" actionListener="#{userController.generateUsers}" update="userTable" />
+
+                <p:blockUI block="userDataPanel" trigger="userTable" />
+                <p:panel id="userDataPanel" style="border: none;">
+                    <p:dataTable var="user" value="#{userController.ldm}" paginator="true" rows="10"
+                                 paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
+                                 rowsPerPageTemplate="5,10,15" sortBy="#{user.id}" id="userTable" lazy="true">
+
+                        <p:column headerText="Id" sortBy="#{user.id}" filterBy="#{user.id}">
+                            <h:outputText value="#{user.id}" />
+                        </p:column>
+
+                        <p:column headerText="FirstName" sortBy="#{user.firstName}" filterBy="#{user.firstName}">
+                            <h:outputText value="#{user.firstName}" />
+                        </p:column>
+
+                        <p:column headerText="LastName" sortBy="#{user.lastName}" filterBy="#{user.lastName}">
+                            <h:outputText value="#{user.lastName}" />
+                        </p:column>
+
+                    </p:dataTable>
+                </p:panel>
+            </p:panel>
+        </h:form>
+    </h:body>
+</html>
