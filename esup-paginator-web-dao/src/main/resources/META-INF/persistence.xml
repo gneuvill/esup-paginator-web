@@ -3,9 +3,6 @@
    xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd"
    version="1.0">
    <persistence-unit name="manager1" transaction-type="RESOURCE_LOCAL">
-       <class>epw.domain.beans.User</class>
-       <!--<properties>-->
-           <!--<property name="hibernate.hbm2ddl.auto" value="create-drop" />-->
-       <!--</properties>-->
+       <class>epw.domain.beans.Person</class>
    </persistence-unit>
 </persistence>

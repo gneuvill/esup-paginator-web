@@ -4,17 +4,21 @@ import com.mysema.query.jpa.JPQLQuery;
 import com.mysema.query.jpa.hibernate.HibernateQuery;
 import com.mysema.query.jpa.impl.JPAQuery;
 import com.mysema.query.support.Expressions;
-import com.mysema.query.types.*;
+import com.mysema.query.types.EntityPath;
+import com.mysema.query.types.Ops;
+import com.mysema.query.types.OrderSpecifier;
+import com.mysema.query.types.PredicateOperation;
 import com.mysema.query.types.path.EntityPathBase;
 import com.mysema.query.types.path.PathBuilder;
 import com.mysema.util.ReflectionUtils;
+import epw.utils.Order;
 import fj.*;
 import fj.data.Either;
 import fj.data.List;
 import fj.data.Option;
 import fj.data.Stream;
 import org.hibernate.Session;
-import org.primefaces.model.SortOrder;
+import org.hibernate.SessionFactory;
 
 import javax.persistence.EntityManager;
 import java.lang.Class;
@@ -23,6 +27,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;
 
+import static epw.utils.Conversions.orderToQorder;
 import static fj.Bottom.error;
 import static fj.Function.curry;
 import static fj.P.p;
@@ -36,16 +41,10 @@ import static fj.data.Stream.iterableStream;
 
 /**
  * Une classe utilitaire pour effectuer des requêtes paginées sur une BDD.
- *
- * <p>
- * TODO : Se débarrasser de la dépendance primefaces {@link SortOrder} ; y substituer un
- * <code>EsupOrder</code> ?
- * </p>
- *
  * <p>
  * Elle s'appuie sur la librairie <a href="http://www.querydsl.com/">QueryDSL</a> pour la construction des requêtes.
  * Cette classe doit être instanciée <b>anonymement</b>, c'est-à dire de la manière suivante :
- *
+ * </p>
  * <p><code>new Paginator() {} //à noter la présence d'accolades</code></p>
  *
  * et <b>non</b> :
@@ -54,14 +53,14 @@ import static fj.data.Stream.iterableStream;
  * </p>
  *
  * @param <Q> Le type (querydsl) de requête à construire ({@link JPAQuery} ou {@link HibernateQuery})
- * @param <T> Le type d'entités retournées par les requêtes
+ * @param <T> Le type des entités retournées par les requêtes
  */
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public abstract class Paginator<Q extends JPQLQuery, T> {
 
     private final Class<T> ttype;
 
-    private final Either<P1<EntityManager>, P1<Session>> dataProvider;
+    private final Either<P1<EntityManager>, P1<SessionFactory>> dataProvider;
 
     private final EntityPathBase<T> ent;
 
@@ -79,10 +78,9 @@ public abstract class Paginator<Q extends JPQLQuery, T> {
      * ou la {@link Session} Hibernate si utilisation conjointe à Hibernate (donc pour {@link Q} = {@link HibernateQuery})
      */
     public Paginator(P1<?> mgr) {
-        // TODO : untiliser un ADT DataProvider = EntityManager | Session + pattern matching ?
-        Type genParam = getTType(mgr.getClass().getGenericSuperclass(), 0);
-        dataProvider = (Either<P1<EntityManager>, P1<Session>>)
-                ((genParam.equals(Session.class)) ? right(mgr) : left(mgr));
+        final Type genParam = getTType(mgr.getClass().getGenericSuperclass(), 0);
+        dataProvider = (Either<P1<EntityManager>, P1<SessionFactory>>)
+                ((genParam.equals(SessionFactory.class)) ? right(mgr) : left(mgr));
         ttype = (Class<T>) getTType(Paginator.this.getClass().getGenericSuperclass(), 1);
         ent = new EntityPathBase<T>(ttype, "ent");
         tPath = new PathBuilder<T>(ttype, ent.getMetadata());
@@ -104,8 +102,9 @@ public abstract class Paginator<Q extends JPQLQuery, T> {
      * @return le {@link Type} correspondant au paramètre {@link T} 
      */
     private Type getTType(Type type, int typeIndex) {
+        // Ne devrait jamais se produire, Paginator étant abstrait et non sous-classable => TODO : supprimer ?
         if (type instanceof Class)
-            throw error("Paginator class and its P1 parameter must be instantiated anonymously !!");
+            error("Paginator class and its P1 parameter must be instantiated anonymously !!");
         final ParameterizedType ptype = (ParameterizedType) type;
         return ptype.getActualTypeArguments()[typeIndex];
     }
@@ -185,26 +184,14 @@ public abstract class Paginator<Q extends JPQLQuery, T> {
     // ########## Sorting ############
 
     /**
-     * Convertit un {@link SortOrder} en {@link Order}
-     * <br />
-     * TODO : remplacer {@link SortOrder} par un <code>EsupOrder</code>
-     */
-    private final F<SortOrder, Order> sorder2Order = new F<SortOrder, Order>() {
-        public Order f(SortOrder so) {
-            return (so.equals(SortOrder.DESCENDING)) ?
-                    Order.DESC: Order.ASC; }
-    };
-
-    /**
      * Application de la clause <code>orderBy</code> à la requête
      * <br />
-     * TODO : remplacer {@link SortOrder} par un <code>EsupOrder</code>
      */
-    private final F3<Q, String, SortOrder, Q> orderBy =
-            new F3<Q, String, SortOrder, Q>() {
-                public Q f(Q q, String sortField, SortOrder sortOrder) {
+    private final F3<Q, String, Order, Q> orderBy =
+            new F3<Q, String, Order, Q>() {
+                public Q f(Q q, String sortField, Order order) {
                     return (Q) q.orderBy(new OrderSpecifier(
-                            sorder2Order.f(sortOrder),
+                            orderToQorder(order),
                             tPath.get(sortField, getType.f(sortField))));
                 }};
 
@@ -231,8 +218,7 @@ public abstract class Paginator<Q extends JPQLQuery, T> {
      * @param customFilter
      * @return Une fonction retournant la requête complète
      */
-    private <A> F<A, F<String, F<SortOrder, Q>>> query(F<A, Q> base, Map<String,String> filters,
-                                                       F<Q, Q> customFilter) {
+    private <A> F<A, F<String, F<Order, Q>>> query(F<A, Q> base, Map<String,String> filters, F<Q, Q> customFilter) {
         return base.andThen(filter.f(filters)).andThen(customFilter).andThen(curry(orderBy));
     }
 
@@ -242,9 +228,9 @@ public abstract class Paginator<Q extends JPQLQuery, T> {
                     public Q f(EntityManager entMgr) {
                         return (Q) new JPAQuery(entMgr).from(o);
                     }}.mapP1(),
-                new F<Session, Q>() {
-                    public Q f(Session session) {
-                        return (Q) new HibernateQuery(session).from(o);
+                new F<SessionFactory, Q>() {
+                    public Q f(SessionFactory sessionFactory) {
+                        return (Q) new HibernateQuery(sessionFactory.getCurrentSession()).from(o);
                     }}.mapP1())._1();
     }
 
@@ -253,36 +239,37 @@ public abstract class Paginator<Q extends JPQLQuery, T> {
     /**
      * Requête de pagination
      *
+     *
      * @param offset Où commence-t-on ?
      * @param limit Combien d'éléments ?
      * @param sortField Sur quel champ trie-t-on ?
-     * @param sortOrder Dans quel ordre ?
-     * @param filters Sur quels champs filtrer ? Avec quelles valeurs ?
-     * @param optCustomfilter Un ou des filtres supplémentaires optionnels
-     * @return Un 2-tuple constitué du nombre d'éléments correspondant à la requête filtrée mais <b>non</b> paginée
+     * @param order
+     *@param filters Sur quels champs filtrer ? Avec quelles valeurs ?
+     * @param optCustomfilter Un ou des filtres supplémentaires optionnels   @return Un 2-tuple constitué du nombre d'éléments correspondant à la requête filtrée mais <b>non</b> paginée
      * et de la liste des éléments retournés par la requête complète (paginée, filtrée et ordonnée)
      */
     public final P2<Long, java.util.List<T>> sliceOf(Long offset, Long limit, String sortField,
-                                                     SortOrder sortOrder, Map<String,String> filters, Option<F<Q, Q>> optCustomfilter) {
+                                                     Order order, Map<String,String> filters, Option<F<Q, Q>> optCustomfilter) {
         final F<Q, Q> customFilter = optCustomfilter.orSome(Function.<Q>identity());
         return p(
-                query(full.constant(), filters, customFilter).f(unit()).f(sortField).f(sortOrder).count(),
-                query(tuple(slice), filters, customFilter).f(p(offset, limit)).f(sortField).f(sortOrder).list(ent));
+                query(full.constant(), filters, customFilter).f(unit()).f(sortField).f(order).count(),
+                query(tuple(slice), filters, customFilter).f(p(offset, limit)).f(sortField).f(order).list(ent));
     }
 
     /**
-     * Comme {@link Paginator#sliceOf(Long, Long, String, SortOrder, Map, Option)} mais retourne
+     * Comme {@link Paginator#sliceOf(Long, Long, String, epw.utils.Order, java.util.Map, fj.data.Option)} mais retourne
      * les éléments dans un {@link Stream} par commodité
      */
     public final P2<Long, Stream<T>> lazySliceOf(
-            Long offset, Long limit,String sortField, SortOrder sortOrder, Map<String,String> filters,
+            Long offset, Long limit,String sortField, Order sortOrder, Map<String,String> filters,
             Option<F<Q, Q>> optCustomfilter) {
         P2<Long, java.util.List<T>> t = sliceOf(offset, limit, sortField, sortOrder, filters, optCustomfilter);
         return p(t._1(), iterableStream(t._2()));
     }
 
     /**
-     * Utilité pour la construction de filtres supplémentaires à fournir à {@link Paginator#sliceOf(Long, Long, String, SortOrder, Map, Option)}
+     * Utilité pour la construction de filtres supplémentaires à fournir à
+     * {@link Paginator#sliceOf(Long, Long, String, epw.utils.Order, java.util.Map, fj.data.Option)}
      * @return un {@link PathBuilder} associé à l'entité courante (de type {@link Q})
      */
     public final PathBuilder<T> getTPathBuilder() { return tPath; }

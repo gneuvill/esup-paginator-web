@@ -10,7 +10,7 @@
 
     <bean id="domainService" class="epw.domain.DomainServiceImpl"
           factory-method="domainService">
-        <constructor-arg ref="userDao" />
+        <constructor-arg ref="personDao" />
         <constructor-arg ref="paginatorFactory" />
     </bean>
 

@@ -1,7 +1,7 @@
 package epw.dao.utils;
 
 import com.mysema.query.jpa.impl.JPAQuery;
-import epw.domain.beans.User;
+import epw.domain.beans.Person;
 import fj.P1;
 
 import javax.persistence.EntityManager;
@@ -12,10 +12,10 @@ public class PaginatorFactory {
     @PersistenceContext
     private EntityManager ent;
 
-    private final Paginator<JPAQuery, User> userPag;
+    private final Paginator<JPAQuery, Person> userPag;
 
     private PaginatorFactory() {
-        userPag = new Paginator<JPAQuery, User>(new P1<EntityManager>() {
+        userPag = new Paginator<JPAQuery, Person>(new P1<EntityManager>() {
                      public EntityManager _1() {
                          return ent;
                      }}) {};
@@ -25,7 +25,7 @@ public class PaginatorFactory {
         return new PaginatorFactory();
     }
 
-    public Paginator<JPAQuery, User> userPaginator() {
+    public Paginator<JPAQuery, Person> userPaginator() {
         return userPag;
     }
 

@@ -3,21 +3,27 @@
  */
 package epw.domain;
 
-import epw.domain.beans.User;
+import epw.domain.beans.Person;
+import epw.utils.Order;
+import fj.Effect;
 import fj.P2;
 import fj.Unit;
 import fj.data.Stream;
-import org.primefaces.model.SortOrder;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
 public interface DomainService {
 
-    public Unit saveUser(User user);
+    @Transactional(propagation = Propagation.REQUIRED)
+    public Unit savePerson(Person person);
 
-    public Unit generateUsers();
+    @Transactional(propagation = Propagation.REQUIRED)
+    public Unit generatePersons(Effect<Person> callBack);
 
-    public P2<Long, Stream<User>> sliceOfUsers(
-            Long first, Long pageSize,String sortField, SortOrder sortOrder, Map<String,String> filters);
+    @Transactional(propagation = Propagation.REQUIRED)
+    public P2<Long, Stream<Person>> sliceOfPersons(
+            Long first, Long pageSize, String sortField, Order order, Map<String, String> filters);
 
 }

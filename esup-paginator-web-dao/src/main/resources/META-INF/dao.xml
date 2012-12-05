@@ -44,7 +44,7 @@
 
     <util:properties id="jpaProperties">
         <prop key="hibernate.dialect">${hibernate.dialect}</prop>
-        <prop key="hibernate.show_sql">true</prop>
+        <prop key="hibernate.show_sql">false</prop>
         <prop key="transaction.factory_class">org.hibernate.transaction.JDBCTransactionFactory</prop>
         <prop key="hibernate.hbm2ddl.auto">create</prop>
         <prop key="hibernate.cache.provider_class">org.hibernate.cache.NoCacheProvider</prop>
@@ -52,7 +52,7 @@
         <prop key="hibernate.cache.use_second_level_cache">false</prop>
     </util:properties>
 
-    <bean id="userDao" class="epw.dao.UserDao" />
+    <bean id="personDao" class="epw.dao.PersonDao" />
 
     <bean id="paginatorFactory" class="epw.dao.utils.PaginatorFactory"
           factory-method="pagFact" />

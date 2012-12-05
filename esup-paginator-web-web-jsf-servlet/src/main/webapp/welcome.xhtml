@@ -11,27 +11,51 @@
     </h:head>
     <h:body>
         <h1>Esup Paginator</h1>
-        <h:form>
-            <p:blockUI block="userPanel" trigger="genUsers" />
-            <p:panel id="userPanel" style="border: none;">
-                <p:commandButton id="genUsers" value="Générer des 'User'" actionListener="#{userController.generateUsers}" update="userTable" />
+        <h:form id="personForm">
+            <p:panel id="personPanel" style="border: none;">
+                <!-- <p:growl widgetVar="growl" showDetail="true" /> -->
+                <div>User <h:outputText id="out" /> created</div>
+                <p:commandButton id="genPersons" value="Generate 'Persons'" actionListener="#{userController.generatePersons}" async="true" />
 
-                <p:blockUI block="userDataPanel" trigger="userTable" />
-                <p:panel id="userDataPanel" style="border: none;">
-                    <p:dataTable var="user" value="#{userController.ldm}" paginator="true" rows="10"
+                <p:socket onMessage="handleMessage" channel="/personSavedNotif" />
+
+                <script type="text/javascript">
+                    function handleMessage(facesmessage) {
+                    $('#userForm\\:out').html(facesmessage.detail);
+                    if (facesmessage.detail == '10') updateTable();
+                    }
+                </script>
+
+                <p:remoteCommand id="updateTable" name="updateTable" async="true" update="personTable" />
+                
+                <!-- <script type="text/javascript"> -->
+                <!--     function handleMessage(facesmessage) { -->
+                <!--     facesmessage.severity = 'info'; -->
+                    
+                <!--     if (facesmessage.detail == '1') -->
+                <!--     growl.show([facesmessage]); -->
+                <!--     else { -->
+                <!--     growl.renderMessage(facesmessage); -->
+                <!--     } -->
+                <!--     } -->
+                <!-- </script> --> 
+
+                <p:blockUI block="personDataPanel" trigger="personTable" />
+                <p:panel id="personDataPanel" style="border: none;">
+                    <p:dataTable var="person" value="#{personController.ldm}" paginator="true" rows="10"
                                  paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
-                                 rowsPerPageTemplate="5,10,15" sortBy="#{user.id}" id="userTable" lazy="true">
+                                 rowsPerPageTemplate="5,10,15" sortBy="#{person.id}" id="personTable" lazy="true">
 
-                        <p:column headerText="Id" sortBy="#{user.id}" filterBy="#{user.id}">
-                            <h:outputText value="#{user.id}" />
+                        <p:column headerText="Id" sortBy="#{person.id}" filterBy="#{person.id}">
+                            <h:outputText value="#{person.id}" />
                         </p:column>
 
-                        <p:column headerText="FirstName" sortBy="#{user.firstName}" filterBy="#{user.firstName}">
-                            <h:outputText value="#{user.firstName}" />
+                        <p:column headerText="FirstName" sortBy="#{person.firstName}" filterBy="#{person.firstName}">
+                            <h:outputText value="#{person.firstName}" />
                         </p:column>
 
-                        <p:column headerText="LastName" sortBy="#{user.lastName}" filterBy="#{user.lastName}">
-                            <h:outputText value="#{user.lastName}" />
+                        <p:column headerText="LastName" sortBy="#{person.lastName}" filterBy="#{person.lastName}">
+                            <h:outputText value="#{person.lastName}" />
                         </p:column>
 
                     </p:dataTable>
