@@ -8,14 +8,17 @@ import epw.dao.PersonDao;
 import epw.dao.utils.PaginatorFactory;
 import epw.domain.beans.Person;
 import epw.utils.Order;
-import fj.*;
-import fj.data.List;
+import fj.F;
+import fj.F2;
+import fj.P2;
 import fj.data.Option;
 import fj.data.Stream;
 import org.esupportail.commons.services.logging.Logger;
 import org.esupportail.commons.services.logging.LoggerImpl;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Map;
 
@@ -23,9 +26,6 @@ import static epw.domain.beans.Person.person;
 import static fj.Function.uncurryF2;
 import static fj.P2.split_;
 import static fj.Show.intShow;
-import static fj.Unit.unit;
-import static fj.data.List.list;
-import static fj.data.List.sequence_;
 import static fj.data.Stream.range;
 
 public class DomainServiceImpl implements DomainService {
@@ -33,17 +33,26 @@ public class DomainServiceImpl implements DomainService {
 	@SuppressWarnings("unused")
 	private final Logger logger = new LoggerImpl(this.getClass());
 
+    private final TransactionTemplate txTemplate;
+
     private final PersonDao personDao;
 
     private final PaginatorFactory paginatorFactory;
 
-    private DomainServiceImpl(PersonDao personDao, PaginatorFactory pf) {
+    private DomainServiceImpl(
+            PlatformTransactionManager transactionManager,
+            PersonDao personDao,
+            PaginatorFactory pf) {
+        this.txTemplate = new TransactionTemplate(transactionManager);
         this.personDao = personDao;
         this.paginatorFactory = pf;
     }
 
-    public static DomainService domainService(PersonDao personDao, PaginatorFactory pf) {
-        return new DomainServiceImpl(personDao, pf);
+    public static DomainService domainService(
+            PlatformTransactionManager transactionManager,
+            PersonDao personDao,
+            PaginatorFactory pf) {
+        return new DomainServiceImpl(transactionManager, personDao, pf);
     }
 
     final F2<String, String, String> concat = new F2<String, String, String>() {
@@ -65,30 +74,35 @@ public class DomainServiceImpl implements DomainService {
         }
     };
 
-    final F<Person, Unit> savePerson = new F<Person, Unit>() {
-        public Unit f(Person person) {
-            return savePerson(person);
-        }
-    };
-
-    @Transactional(propagation = Propagation.REQUIRED)
-    public final Unit savePerson(Person person) {
-        return personDao.savePerson.e().f(person);
+    @Override
+    public final Person savePerson(final Person person) {
+        Person p =  txTemplate.execute(new TransactionCallback<Person>() {
+            public Person doInTransaction(TransactionStatus status) {
+                return personDao.savePerson.f(person);
+            }
+        });
+        System.out.println("SAVED !!");
+        return p;
     }
 
-    public final Unit generatePersons(Effect<Person> callBack) {
-        final F<Integer, String> firstname = uncurryF2(toStringAndConcat).flip().f("toto-");
-        final F<Integer, String> lastname = uncurryF2(toStringAndConcat).flip().f("tutu-");
-
-        final F<Person, Unit> personEffect =
-                sequence_(list(savePerson, callBack.e())).andThen(Function.<List<Unit>, Unit>constant(unit()));
-
-        range(0, 10000).zipIndex().map(
-                split_(firstname, lastname).andThen(person.tuple())).foreach(personEffect);
-
-        return unit();
+    @Override
+    public final F<Person, Person> savePerson_() {
+        return new F<Person, Person>() {
+            public Person f(Person person) {
+                return savePerson(person);
+            }
+        };
     }
 
+    @Override
+    public final Stream<Person> generatePersons() {
+        F<Integer, String> firstname = uncurryF2(toStringAndConcat).flip().f("toto-");
+        F<Integer, String> lastname = uncurryF2(toStringAndConcat).flip().f("tutu-");
+
+        return range(0, 50000).zipIndex().map(split_(firstname, lastname).andThen(person.tuple()));
+    }
+
+    @Override
     public final P2<Long, Stream<Person>> sliceOfPersons(
             Long first, Long pageSize, String sortField, Order order, Map<String, String> filters) {
         return paginatorFactory.userPaginator().lazySliceOf(

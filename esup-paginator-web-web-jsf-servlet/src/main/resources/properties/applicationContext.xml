@@ -19,16 +19,8 @@
 	</bean>
 	<bean id="app_context" class="org.esupportail.commons.context.ApplicationContextHolder"/>
 	
-	<!--<import resource="classpath*:META-INF/esup-paginator-web-domain-services-auth.xml" />-->
     <import resource="classpath*:META-INF/dao.xml" />
     <import resource="classpath*:META-INF/domain.xml" />
-	<!--<import resource="classpath*:META-INF/esup-paginator-web-domain-services-abstractBeans.xml" />-->
-	<!--<import resource="classpath*:META-INF/esup-paginator-web-domain-services-application.xml" />-->
-	<!--<import resource="classpath*:META-INF/esup-paginator-web-domain-services-i18n.xml" />-->
-	<!--<import resource="exceptionHandling/exceptionHandling.xml" />-->
-	<!--<import resource="cache/cache.xml"/>-->
-	<!--<import resource="smtp/smtp.xml" />-->
-	<!--<import resource="tags/tags.xml" />-->
 	<import resource="web/controllers.xml" />
-	<!--<import resource="web/converters.xml" />-->
+
 </beans>

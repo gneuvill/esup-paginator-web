@@ -14,14 +14,14 @@
         <h:form id="personForm">
             <p:panel id="personPanel" style="border: none;">
                 <!-- <p:growl widgetVar="growl" showDetail="true" /> -->
-                <div>User <h:outputText id="out" /> created</div>
-                <p:commandButton id="genPersons" value="Generate 'Persons'" actionListener="#{userController.generatePersons}" async="true" />
+                <div>User <span id="out" /> created</div>
+                <p:commandButton id="genPersons" value="Generate 'Persons'" actionListener="#{personController.generatePersons}" async="true" />
 
                 <p:socket onMessage="handleMessage" channel="/personSavedNotif" />
 
                 <script type="text/javascript">
                     function handleMessage(facesmessage) {
-                    $('#userForm\\:out').html(facesmessage.detail);
+                    $('#out').html(facesmessage.detail);
                     if (facesmessage.detail == '10') updateTable();
                     }
                 </script>
