@@ -85,6 +85,20 @@ public final class LazyDataModel<T> extends org.primefaces.model.LazyDataModel<T
                 first == 0 || first + pageSize < getRowCount() ?
                         lazyGetData.f(first + pageSize).map(consP2(first + pageSize)) : p(empty);
 
+        // TODO : un queueActor ne garantit PAS l'ordre
+        // d'éxécution des messages. Il faut donc créer
+        // un type algébrique représentant les différents
+        // types de messages et ne garder qu'un seul acteur
+        // qui agira différemment suivant le type de message
+        // (pattern matching). De cette manière, vu que le queueActor
+        // garantit pour le coup que chaque message est traité unitairement,
+        // l'état interne du LazyDataModel restera cohérent (formerPage, nextPage, centralPage, rowCount)
+        // Mais cela n'empêchera à priori pas une requête d'obtenir
+        // le résultat (rowCount, centralPage) d'une requête concurrente...
+        // Pour résoudre ce dernier problème, il faudrait gérer l'état
+        // du LazyDataModel différemment (surcharger tous les accesseurs
+        // primefaces) (voire se débarasser de cet état... ?)
+
         // préchargement en arrière plan de la page précédente
         promise(strategy, formerData).to(fpActor);
         // préchargement en arrière plan de la page suivante
