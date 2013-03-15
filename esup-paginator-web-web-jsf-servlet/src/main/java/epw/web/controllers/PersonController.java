@@ -13,8 +13,10 @@ import org.primefaces.push.PushContextFactory;
 
 import javax.faces.application.FacesMessage;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 import static epw.utils.ParallelModule.parMod;
 import static epw.web.utils.LazyDataModel.lazyDataModel;
@@ -42,14 +44,19 @@ public class PersonController {
     }
 
     final F<FacesMessage, Future<FacesMessage>> pushMessage = new F<FacesMessage, Future<FacesMessage>>() {
-        public Future<FacesMessage> f(FacesMessage facesMessage) {
-            try {
-                Thread.sleep(2L);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            System.out.println(facesMessage.getDetail());
-            return pushContext.push("/personSavedNotif", facesMessage);
+        public Future<FacesMessage> f(final FacesMessage facesMessage) {
+//            try {
+//                Thread.sleep(30L);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+            //System.out.println(facesMessage.getDetail());
+            return new FutureTask<FacesMessage>(new Callable<FacesMessage>() {
+                public FacesMessage call() throws Exception {
+                    return facesMessage;
+                }
+            });
+            //return pushContext.push("/personSavedNotif", facesMessage);
         }
     };
 

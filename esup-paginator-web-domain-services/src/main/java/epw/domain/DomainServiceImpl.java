@@ -81,7 +81,7 @@ public class DomainServiceImpl implements DomainService {
                 return personDao.savePerson.f(person);
             }
         });
-        System.out.println("SAVED !!");
+        //System.out.println("SAVED !!");
         return p;
     }
 
@@ -96,10 +96,10 @@ public class DomainServiceImpl implements DomainService {
 
     @Override
     public final Stream<Person> generatePersons() {
-        F<Integer, String> firstname = uncurryF2(toStringAndConcat).flip().f("toto-");
-        F<Integer, String> lastname = uncurryF2(toStringAndConcat).flip().f("tutu-");
+        final F<Integer, String> firstname = uncurryF2(toStringAndConcat).flip().f("toto-");
+        final F<Integer, String> lastname = uncurryF2(toStringAndConcat).flip().f("tutu-");
 
-        return range(0, 50000).zipIndex().map(split_(firstname, lastname).andThen(person.tuple()));
+        return range(0, 300000).zipIndex().map(split_(firstname, lastname).andThen(person.tuple()));
     }
 
     @Override

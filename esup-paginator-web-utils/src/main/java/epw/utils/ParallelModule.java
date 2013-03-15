@@ -11,7 +11,7 @@ import static fj.control.parallel.ParModule.parModule;
 public class ParallelModule {
 
     public static final ParModule parMod = parModule(
-            Strategy.<Unit>executorStrategy(Executors.newFixedThreadPool(50)));
+            Strategy.<Unit>executorStrategy(Executors.newFixedThreadPool(85)));
 
 
 }
