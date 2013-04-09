@@ -21,7 +21,6 @@ import java.util.concurrent.FutureTask;
 import static epw.utils.ParallelModule.parMod;
 import static epw.web.utils.LazyDataModel.lazyDataModel;
 import static fj.Show.showS;
-import static fj.Unit.unit;
 
 public class PersonController {
 
@@ -45,18 +44,13 @@ public class PersonController {
 
     final F<FacesMessage, Future<FacesMessage>> pushMessage = new F<FacesMessage, Future<FacesMessage>>() {
         public Future<FacesMessage> f(final FacesMessage facesMessage) {
-//            try {
-//                Thread.sleep(30L);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-            //System.out.println(facesMessage.getDetail());
-            return new FutureTask<FacesMessage>(new Callable<FacesMessage>() {
-                public FacesMessage call() throws Exception {
+            return Integer.parseInt(facesMessage.getDetail()) % 100 == 0 ?
+                pushContext.push("/personSavedNotif", facesMessage) :
+                new FutureTask<>(new Callable<FacesMessage>() {
+                  public FacesMessage call() throws Exception {
                     return facesMessage;
-                }
-            });
-            //return pushContext.push("/personSavedNotif", facesMessage);
+                  }
+                });
         }
     };
 
@@ -66,29 +60,20 @@ public class PersonController {
         }
     };
 
-    final Actor<Stream<Future<FacesMessage>>> messageActor = parMod.actor(new Effect<Stream<Future<FacesMessage>>>() {
-        public void e(Stream<Future<FacesMessage>> s) {
-            s.foreach(new F<Future<FacesMessage>, Unit>() {
-                public Unit f(Future<FacesMessage> future) {
+    final Actor<Future<FacesMessage>> messageActor = parMod.actor(new Effect<Future<FacesMessage>>() {
+        public void e(Future<FacesMessage> future) {
                     try {
                         future.get();
                     } catch (InterruptedException | ExecutionException e) {
                         e.printStackTrace();
                     }
-                    return unit();
-                }
-            });
         }});
-
-    final F<Person, Promise<Person>> willSavePers_() {
-        return parMod.promise(domainService.savePerson_());
-    }
 
     private final LazyDataModel<Person> ldm = lazyDataModel(
             new F5<Integer, Integer, String, Order, Map<String, String>, P2<Long, Stream<Person>>>() {
                 public P2<Long, Stream<Person>> f(
                         Integer first, Integer pageSize, String sortField, Order order, Map<String, String> filters) {
-                    return domainService.sliceOfPersons(new Long(first), new Long(pageSize), sortField, order, filters);
+                    return domainService.sliceOfPersons((long) first, (long) pageSize, sortField, order, filters);
                 }
             },
             new F2<String, Person, Boolean>() {
@@ -99,10 +84,17 @@ public class PersonController {
     );
 
     public void generatePersons() {
-        parMod.mapM(
-                domainService.generatePersons(),
-                willSavePers_().andThen(persToMessage.andThen(pushMessage).mapPromise())
-        ).to(messageActor);
+      domainService.generatePersons()
+          .map(parMod.promise(domainService.savePerson_().andThen(persToMessage.andThen(pushMessage))))
+          .foreach(new Effect<Promise<Future<FacesMessage>>>() {
+            public void e(Promise<Future<FacesMessage>> futurePromise) {
+              futurePromise.to(messageActor);
+            }
+          });
+//        parMod.mapM(
+//                domainService.generatePersons(),
+//                parMod.promise(domainService.savePerson_().andThen(persToMessage.andThen(pushMessage)))
+//        ).to(messageActor);
     }
 
     public LazyDataModel<Person> getLdm() {

@@ -27,7 +27,7 @@ public class Person {
     @Column(nullable = false)
     private final String lastName;
 
-    private Person() {
+    public Person() {
         firstName = "";
         lastName = "";
     }

@@ -99,7 +99,7 @@ public class DomainServiceImpl implements DomainService {
         final F<Integer, String> firstname = uncurryF2(toStringAndConcat).flip().f("toto-");
         final F<Integer, String> lastname = uncurryF2(toStringAndConcat).flip().f("tutu-");
 
-        return range(0, 300000).zipIndex().map(split_(firstname, lastname).andThen(person.tuple()));
+        return range(0, 1000000).zipIndex().map(split_(firstname, lastname).andThen(person.tuple()));
     }
 
     @Override
