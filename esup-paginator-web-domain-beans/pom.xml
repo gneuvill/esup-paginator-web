@@ -9,11 +9,4 @@
     <groupId>esup-paginator-web</groupId>
     <artifactId>esup-paginator-web-domain-beans</artifactId>
     <description>The business object</description>
-    <dependencies>
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-entitymanager</artifactId>
-            <version>4.1.8.Final</version>
-        </dependency>
-    </dependencies>
 </project>

@@ -4,6 +4,7 @@ import epw.utils.Order;
 import fj.*;
 import fj.control.parallel.Actor;
 import fj.control.parallel.Strategy;
+import fj.data.Option;
 import fj.data.Stream;
 import org.primefaces.model.SortOrder;
 
@@ -76,7 +77,7 @@ public final class LazyDataModel<T> extends org.primefaces.model.LazyDataModel<T
     public List<T> load(final int first, int pageSize, String sortField, SortOrder sortOrder, Map<String, String> filters) {
         // requête sans l'offset (first)
         final F<Integer, P1<P2<Long, Stream<T>>>> lazyGetData =
-                curry(getData).f(pageSize).f(sortField).f(pfOrderToOrder(sortOrder)).f(filters).lazy();
+                curry(getData).f(pageSize).f(Option.fromString(sortField).orSome("id")).f(pfOrderToOrder(sortOrder)).f(filters).lazy();
         // requête pour la page précédente
         final P1<P3<Integer, Long, Stream<T>>> formerData =
                 first > 0 ? lazyGetData.f(first - pageSize).map(consP2(first - pageSize)) : p(empty);

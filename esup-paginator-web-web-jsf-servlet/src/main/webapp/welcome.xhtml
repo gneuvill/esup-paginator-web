@@ -4,45 +4,30 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://java.sun.com/jsf/html"
-      xmlns:f="http://java.sun.com/jsf/core"
-      xmlns:ui="http://java.sun.com/jsf/facelets"
       xmlns:p="http://primefaces.org/ui">
     <h:head>
+        <h:outputScript name="js/Bacon.js" />
+        <h:outputScript name="js/epw.js" />
     </h:head>
     <h:body>
         <h1>Esup Paginator</h1>
         <h:form id="personForm">
             <p:panel id="personPanel" style="border: none;">
-                <!-- <p:growl widgetVar="growl" showDetail="true" /> -->
-                <div>User <span id="out" /> created</div>
-                <p:commandButton id="genPersons" value="Generate 'Persons'" actionListener="#{personController.generatePersons}" async="true" />
 
-                <p:socket onMessage="handleMessage" channel="/personSavedNotif" />
+                <div><span id="name" /> created</div>
 
-                <script type="text/javascript">
-                    function handleMessage(facesmessage) {
-                    $('#out').html(facesmessage.detail);
-                    if (parseInt(facesmessage.detail) % 20000 == 0) updateTable();
-                    }
-                </script>
+                <p:commandButton id="genPersons" value="Generate 'Persons'" async="true"
+                                 actionListener="#{akkaPersController.generatePersons}" />
+
+                <div style="float: right"><span id="nbr" /> users created</div>
+
+                <p:socket onMessage="nbrPersBus.push" channel="/nbrPersSavedNotif" />
+                <p:socket onMessage="persBus.push" channel="/personSavedNotif" />
 
                 <p:remoteCommand id="updateTable" name="updateTable" async="true" update="personTable" />
-                
-                <!-- <script type="text/javascript"> -->
-                <!--     function handleMessage(facesmessage) { -->
-                <!--     facesmessage.severity = 'info'; -->
-                    
-                <!--     if (facesmessage.detail == '1') -->
-                <!--     growl.show([facesmessage]); -->
-                <!--     else { -->
-                <!--     growl.renderMessage(facesmessage); -->
-                <!--     } -->
-                <!--     } -->
-                <!-- </script> --> 
-
                 <p:blockUI block="personDataPanel" trigger="personTable" />
                 <p:panel id="personDataPanel" style="border: none;">
-                    <p:dataTable var="person" value="#{personController.ldm}" paginator="true" rows="10"
+                    <p:dataTable var="person" value="#{persController.ldm}" paginator="true" rows="10"
                                  paginatorTemplate="{RowsPerPageDropdown} {FirstPageLink} {PreviousPageLink} {CurrentPageReport} {NextPageLink} {LastPageLink}"
                                  rowsPerPageTemplate="5,10,15" sortBy="#{person.id}" id="personTable" lazy="true">
 
@@ -57,7 +42,6 @@
                         <p:column headerText="LastName" sortBy="#{person.lastName}" filterBy="#{person.lastName}">
                             <h:outputText value="#{person.lastName}" />
                         </p:column>
-
                     </p:dataTable>
                 </p:panel>
             </p:panel>

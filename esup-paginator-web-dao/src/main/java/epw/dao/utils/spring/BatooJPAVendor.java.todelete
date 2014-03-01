@@ -23,7 +23,7 @@ public class BatooJPAVendor extends AbstractJpaVendorAdapter{
     final Map<String, Object> jpaProperties = new HashMap<>();
 
     if (this.isGenerateDdl()) {
-      jpaProperties.put("org.batoo.jpa.ddl", "UPDATE");
+      jpaProperties.put("org.batoo.jpa.ddl", "DROP");
     }
 
     if (this.isShowSql()) {

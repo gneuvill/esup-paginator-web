@@ -8,8 +8,13 @@
         used by the web interface. It should not be modified but by the developers.
         This file is referenced by /properties/applicationContext.xml. -->
 
-    <bean name="personController" class="epw.web.controllers.PersonController"
+    <bean name="persController" class="epw.web.controllers.PersonController"
           factory-method="personController">
+        <constructor-arg ref="domainService" />
+    </bean>
+
+    <bean name="akkaPersController" class="epw.web.controllers.AkkaPersController"
+          factory-method="akkaPersController">
         <constructor-arg ref="domainService" />
     </bean>
 

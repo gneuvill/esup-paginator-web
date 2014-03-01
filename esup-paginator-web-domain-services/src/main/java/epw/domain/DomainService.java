@@ -3,7 +3,7 @@
  */
 package epw.domain;
 
-import epw.domain.beans.Person;
+import epw.model.Person;
 import epw.utils.Order;
 import fj.F;
 import fj.P2;
